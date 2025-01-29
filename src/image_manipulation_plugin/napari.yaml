@@ -1,0 +1,11 @@
+name: image_manipulation_plugin
+display_name: Image Manipulation Plugin
+contributions:
+  commands:
+    - id: image_manipulation_plugin.label_image_manip
+      python_name: image_manipulation_plugin._widgets:LabelImageManipulationWidget
+      title: Label image manipulation
+  widgets:
+    - command: image_manipulation_plugin.label_image_manip
+      display_name: Label image manipulation
+
