@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from qtpy.QtWidgets import QWidget, QComboBox, QStackedWidget, QVBoxLayout
 from magicgui import widgets
 from . import label_image_manipulation
+from . import label_creation
 
 
 if TYPE_CHECKING:
@@ -67,4 +68,7 @@ class MainWidget(QWidget):
 
 class LabelImageManipulationWidget(MainWidget):
     module = label_image_manipulation
+
+class LabelCreationWidget(MainWidget):
+    module = label_creation
 
