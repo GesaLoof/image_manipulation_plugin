@@ -2,7 +2,7 @@ from qtpy.QtWidgets import (
     QWidget,
     QPushButton,
     QHBoxLayout,
-    ComboBox
+    QComboBox
 )
 from image_manipulation_plugin.utils import (
     error_image_selection,
@@ -32,8 +32,8 @@ class ThresholdLabels(QWidget):
     This class creates labels using a chosen thresholding method given an intensity image
     """
 
-    # Name that will be displayed on the combobox
-    name = "Threshold labels"
+    # Name that will be displayed
+    name = "Try all thresholding methods"
 
     def _on_click_use_all_thresholds(self):
         # Get the selected image (make sure that it isn't none)
@@ -62,7 +62,7 @@ class ThresholdLabels(QWidget):
         btn = QPushButton("Test all thresholds")
         btn.native = btn
         btn.name = "Test all thresholds"
-        btn.clicked.connect(self._on_click_count_labels)
+        btn.clicked.connect(self._on_click_use_all_thresholds)
         self.setLayout(QHBoxLayout())
         self.layout().addWidget(btn)
         self.count = widgets.Label(value="")
@@ -90,7 +90,7 @@ class ApplyThresholdOfChoice(QWidget):
         # only run function if the selected layer is an intensity image
         if isinstance(self.viewer.layers.selection.active, layers.Image):
             image = image.data
-            method = str(self.method.value)
+            method = str(self.threshold.value)
             if method == "Otsu":
                 thresh = threshold_otsu(image)
             elif method == "Yen":
@@ -101,7 +101,10 @@ class ApplyThresholdOfChoice(QWidget):
                 thresh = threshold_isodata(image)
             elif method == "Mean":
                 thresh = threshold_mean(image)
-            binary = image > thresh
+            if self.image_type.value == "electron micriscopy":
+                binary = image < thresh
+            if self.image_type.value == "light microscopy":
+                binary = image > thresh
             self.viewer.add_labels(binary.astype(int), name="Labels")
             self.output_str.value = f"Labels created using {method} threshold at {thresh:.2f}"
         else:
@@ -112,18 +115,24 @@ class ApplyThresholdOfChoice(QWidget):
 
         self.viewer = napari_viewer
 
-        btn = ComboBox(choices=["Otsu", "Yen", "Li", "Isodata", "Mean"])
-        btn.name = "Select method"
-        self.method = btn
-        btn.name = "Create labels image"
-        btn.clicked.connect(self._on_click_threshold_image)
-        self.setLayout(QHBoxLayout())
-        self.layout().addWidget(btn)
+        self.threshold_label = widgets.Label(value="")
+        self.threshold_label.value = "select thresholding algorithm"
+        self.threshold = widgets.ComboBox(choices=["Otsu", "Yen", "Li", "Isodata", "Mean"])
+        self.image_type_label = widgets.Label(value="")
+        self.image_type_label.value = "select image type"
+        self.image_type = widgets.ComboBox(choices=["light microscopy", "electron micriscopy"])
+        btn1 = QPushButton("threshold image")
+        btn1.native = btn1
+        btn1.name = "Create labels image"
+        btn1.clicked.connect(self._on_click_threshold_image)
         self.output_str = widgets.Label(value="")
 
-        container = widgets.Container(widgets=[self.btn,
+        container = widgets.Container(widgets=[self.threshold_label,
+                                               self.threshold,
+                                               self.image_type_label,
+                                               self.image_type,
                                                self.output_str,
-                                               self.btn.name,
+                                               btn1   
                                                ], labels=False)
 
         self.setLayout(QHBoxLayout())
@@ -165,8 +174,7 @@ class ManualThresholding(QWidget):
 
         container = widgets.Container(
             widgets=[
-                self.btn,
-                self.btn.name,
+                btn
             ],
             labels=False,
         )
