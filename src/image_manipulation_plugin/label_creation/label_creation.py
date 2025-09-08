@@ -156,10 +156,15 @@ class ManualThresholding(QWidget):
             return
         if isinstance(self.viewer.layers.selection.active, layers.Image):
             image = image.data
-            threshold = self.btn.value
-            binary = image > threshold
-            #TODO check whether I am overwriting layers like this
-            self.viewer.add_labels(binary.astype(int), name="Labels")
+            threshold_perc = self.btn.value
+            threshold_abs = np.max(image) * (threshold_perc / 100)
+            self.message.value = f"Thresholding at {threshold_abs:.2f} ({threshold_perc} % of max intensity)"
+            if self.check.value == False:
+                binary = image > threshold_abs
+                self.viewer.add_labels(binary.astype(int), name=f"Labels_{threshold_perc}%")
+            else:
+                binary = image < threshold_abs            
+                self.viewer.add_labels(binary.astype(int), name=f"Labels_{threshold_perc}%_inverted")
 
         else:
             self.message.value = "Careful, this is not an intensity image."
@@ -168,13 +173,21 @@ class ManualThresholding(QWidget):
         super().__init__()
         self.viewer = napari_viewer
 
-        btn = widgets.Slider(min=0, max=100, step=1, value=50)
-        btn.name = "Threshold value (in % of max intensity)"
-        btn.changed.connect(self._on_click_threshold)
+        self.btn = widgets.Slider(min=0, max=100, step=1, value=50)
+        self.btn.name = "Threshold value (in % of max intensity)"
+        self.message = widgets.Label(value="")
+        btn1 = QPushButton("threshold image")
+        btn1.native = btn1
+        btn1.name = "Create labels image"
+        btn1.clicked.connect(self._on_click_threshold)
+        self.check = widgets.CheckBox(value=False, text='invert thresholding (EM)')
 
         container = widgets.Container(
             widgets=[
-                btn
+                self.btn,
+                btn1,
+                self.check,
+                self.message
             ],
             labels=False,
         )
